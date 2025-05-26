@@ -1,0 +1,42 @@
+# Core dependencies
+requests==2.31.0
+python-dotenv==1.0.0
+pydantic==2.7.1
+typing-extensions==4.11.0
+
+# Performance
+redis==5.0.1  # For caching and task queuing
+celery[redis]==5.3.6  # For task queue management
+
+# Web & API
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Monitoring
+prometheus-client==0.20.0
+opentelemetry-sdk==1.24.0
+opentelemetry-api==1.24.0
+opentelemetry-exporter-prometheus==0.45b0
+opentelemetry-instrumentation-fastapi==0.45b0
+
+# Internationalization
+gettext==0.21.0
+babel==2.14.0
+
+# Code quality
+mypy==1.9.0  # Static type checking
+black==24.3.0  # Code formatter
+isort==5.13.2  # Import sorter
+flake8==7.0.0  # Linter
+pylint==3.1.0  # Python linter
+pre-commit==3.6.1  # Git hooks for code quality
+pytest==8.0.2  # Testing
+pytest-cov==4.1.0  # Test coverage
+pytest-asyncio==0.23.6  # Async test support
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.17

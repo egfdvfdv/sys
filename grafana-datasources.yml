@@ -1,0 +1,95 @@
+# config file version
+apiVersion: 1
+
+# list of datasources to insert/update
+# https://github.com/grafana/grafana/blob/main/pkg/services/provisioning/plugins/datasources.go#L18
+# https://grafana.com/docs/grafana/latest/administration/provisioning/#data-sources
+datasources:
+  # <string, required> name of the datasource. Required
+yaml
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      timeInterval: "5s"
+      httpMethod: "POST"
+      prometheusType: "Prometheus"
+      prometheusVersion: "2.37.0"
+      prometheusUrl: "http://prometheus:9090"
+      cacheLevel: "High"
+      disableMetricsLookup: false
+      exemplarTraceIdDestinations:
+        - name: "traceID"
+          datasourceUid: "tempo"
+  
+  # PostgreSQL datasource
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    database: ${POSTGRES_DB:-agiprompt}
+    user: ${POSTGRES_USER:-postgres}
+    password: ${POSTGRES_PASSWORD:-postgres}
+    url: db:5432
+    isDefault: false
+    jsonData:
+      postgresVersion: 15
+      sslmode: "disable"
+      maxOpenConns: 10
+      maxIdleConns: 10
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: false
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD:-postgres}
+  
+  # Redis datasource for Redis Application
+  - name: Redis
+    type: redis-datasource
+    access: proxy
+    url: redis:6379
+    isDefault: false
+    jsonData:
+      poolSize: 5
+      timeout: 10
+      pingInterval: 30
+      pipelineWindow: 0
+      tlsAuth: false
+      tlsSkipVerify: true
+    secureJsonData: {}
+    version: 1
+    editable: true
+  
+  # Node Exporter for system metrics
+  - name: Node Exporter
+    type: prometheus
+    access: proxy
+    url: http://node-exporter:9100
+    isDefault: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: "GET"
+  
+  # Redis Exporter for Redis metrics
+  - name: Redis Exporter
+    type: prometheus
+    access: proxy
+    url: http://redis-exporter:9121
+    isDefault: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: "GET"
+  
+  # Postgres Exporter for PostgreSQL metrics
+  - name: Postgres Exporter
+    type: prometheus
+    access: proxy
+    url: http://postgres-exporter:9187
+    isDefault: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: "GET"

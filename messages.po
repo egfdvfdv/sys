@@ -1,0 +1,191 @@
+# French translations for AGI Prompt System
+# Copyright (C) 2025 AGI Prompt Team
+# This file is distributed under the same license as the AGI Prompt System project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: agi-prompt-system 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-25 20:10+0000\n"
+"PO-Revision-Date: 2025-05-25 20:10+0000\n"
+"Last-Translator: \n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: api/models.py:15
+msgid "pending"
+msgstr "en attente"
+
+#: api/models.py:16
+msgid "started"
+msgstr "démarré"
+
+#: api/models.py:17
+msgid "retry"
+msgstr "réessayer"
+
+#: api/models.py:18
+msgid "failure"
+msgstr "échec"
+
+#: api/models.py:19
+msgid "success"
+msgstr "succès"
+
+#: api/main.py:45
+msgid "healthy"
+msgstr "en bonne santé"
+
+#: api/main.py:45
+msgid "unhealthy"
+msgstr "mauvais état"
+
+#: api/main.py:150
+msgid "Task {task_id} not found"
+msgstr "Tâche {task_id} introuvable"
+
+#: api/main.py:200
+msgid "Internal Server Error"
+msgstr "Erreur interne du serveur"
+
+#: api/main.py:207
+msgid "Not Found"
+msgstr "Non trouvé"
+
+#: api/main.py:214
+msgid "Validation Error"
+msgstr "Erreur de validation"
+
+#: api/main.py:221
+msgid "Unauthorized"
+msgstr "Non autorisé"
+
+#: api/main.py:228
+msgid "Forbidden"
+msgstr "Interdit"
+
+#: api/main.py:235
+msgid "Method Not Allowed"
+msgstr "Méthode non autorisée"
+
+#: api/main.py:242
+msgid "Not Acceptable"
+msgstr "Non acceptable"
+
+#: api/main.py:249
+msgid "Request Timeout"
+msgstr "Délai de requête dépassé"
+
+#: api/main.py:256
+msgid "Conflict"
+msgstr "Conflit"
+
+#: api/main.py:263
+msgid "Gone"
+msgstr "Disparu"
+
+#: api/main.py:270
+msgid "Precondition Failed"
+msgstr "Échec de la précondition"
+
+#: api/main.py:277
+msgid "Unprocessable Entity"
+msgstr "Entité non traitable"
+
+#: api/main.py:284
+msgid "Too Many Requests"
+msgstr "Trop de requêtes"
+
+#: api/main.py:291
+msgid "Internal Server Error"
+msgstr "Erreur interne du serveur"
+
+#: api/main.py:298
+msgid "Not Implemented"
+msgstr "Non implémenté"
+
+#: api/main.py:305
+msgid "Bad Gateway"
+msgstr "Mauvaise passerelle"
+
+#: api/main.py:312
+msgid "Service Unavailable"
+msgstr "Service indisponible"
+
+#: api/main.py:319
+msgid "Gateway Timeout"
+msgstr "Délai de la passerelle dépassé"
+
+#: api/main.py:326
+msgid "HTTP Version Not Supported"
+msgstr "Version HTTP non supportée"
+
+#: api/main.py:333
+msgid "Variant Also Negotiates"
+msgstr "Variante aussi négociée"
+
+#: api/main.py:340
+msgid "Insufficient Storage"
+msgstr "Espace de stockage insuffisant"
+
+#: api/main.py:347
+msgid "Loop Detected"
+msgstr "Boucle détectée"
+
+#: api/main.py:354
+msgid "Not Extended"
+msgstr "Non étendu"
+
+#: api/main.py:361
+msgid "Network Authentication Required"
+msgstr "Authentification réseau requise"
+
+#: api/main.py:368
+msgid "Network Connect Timeout Error"
+msgstr "Erreur de délai de connexion réseau"
+
+#: api/main.py:375
+msgid "Network Read Timeout Error"
+msgstr "Erreur de délai de lecture réseau"
+
+#: api/main.py:382
+msgid "Network Send Timeout Error"
+msgstr "Erreur de délai d'envoi réseau"
+
+#: api/main.py:389
+msgid "Processing"
+msgstr "En cours de traitement"
+
+#: api/main.py:396
+msgid "Checkpoint"
+msgstr "Point de contrôle"
+
+#: api/main.py:403
+msgid "This method is not allowed for the requested URL."
+msgstr "Cette méthode n'est pas autorisée pour l'URL demandée."
+
+#: api/main.py:410
+msgid "A server error occurred. Please contact the administrator."
+msgstr "Une erreur de serveur s'est produite. Veuillez contacter l'administrateur."
+
+#: api/main.py:417
+msgid "The requested URL was not found on the server."
+msgstr "L'URL demandée n'a pas été trouvée sur le serveur."
+
+#: api/main.py:424
+msgid "The method is not allowed for the requested URL."
+msgstr "La méthode n'est pas autorisée pour l'URL demandée."
+
+#: api/main.py:431
+msgid "The server encountered an internal error and was unable to complete your request."
+msgstr "Le serveur a rencontré une erreur interne et n'a pas pu terminer votre demande."
+
+#: api/main.py:438
+msgid "The server is temporarily unable to service your request due to maintenance downtime or capacity problems. Please try again later."
+msgstr "Le serveur est temporairement incapable de traiter votre demande en raison d'une maintenance ou de problèmes de capacité. Veuillez réessayer plus tard."
