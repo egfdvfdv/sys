@@ -2,6 +2,7 @@
 import os
 from datetime import timedelta
 from kombu import Exchange, Queue
+from config import settings
 
 # Load environment variables
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
@@ -139,8 +140,8 @@ task_compression = 'gzip'
 event_serializer = 'json'
 
 # Task time limits (in seconds)
-task_soft_time_limit = CELERY_TASK_SOFT_TIME_LIMIT  # from settings
-task_time_limit = CELERY_TASK_TIME_LIMIT        # from settings
+task_soft_time_limit = settings.CELERY_TASK_SOFT_TIME_LIMIT
+task_time_limit = settings.CELERY_TASK_TIME_LIMIT
 
 # Task result settings
 task_ignore_result = False

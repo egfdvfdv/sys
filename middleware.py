@@ -146,8 +146,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "Content-Security-Policy": (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
-                "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+                "script-src 'self' cdn.jsdelivr.net; "
+                "style-src 'self' cdn.jsdelivr.net; "
                 "img-src 'self' data:; "
                 "font-src 'self' cdn.jsdelivr.net; "
                 "connect-src 'self'"

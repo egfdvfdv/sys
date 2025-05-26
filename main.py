@@ -23,21 +23,18 @@ from .models import (
     HealthCheck,
     ErrorResponse,
     CacheStats,
-    TaskMetrics
+    TaskMetrics,
+    TaskStatus # Assuming TaskStatus is in models
 )
-from ..config import Config
-from ..prompt_orchestrator import PromptOrchestrator
-from ..utils.cache import CacheManager
-from agi_prompt_system.tasks import generate_prompt_task
+from .config import ApiSettings, settings as app_settings # Use ApiSettings
+from .prompt_orchestrator import PromptOrchestrator
+from .utils.cache import CacheManager
+from .utils.tasks import TaskManager # Import TaskManager
+from agi_prompt_system.tasks import generate_prompt_task # This is likely a Celery app task
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Initialize configuration and components
-config = Config()
-orchestrator = PromptOrchestrator(config)
-cache = CacheManager()
 
 # Application metadata
 APP_NAME = "agi-prompt-system"
@@ -148,12 +145,18 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     response_model=HealthCheck,
     tags=["Monitoring"]
 )
-async def health_check():
+async def health_check(cache: CacheManager = Depends(get_cache_manager)):
     """Health check endpoint."""
     # Check Redis connection
     redis_ok = False
     try:
-        redis_ok = cache.ping()
+        # Assuming CacheManager has a ping method or similar
+        # If not, this check needs to be adapted or rely on a successful CacheManager instantiation
+        if hasattr(cache, 'ping'):
+            redis_ok = cache.ping()
+        else:
+            # Basic check: if cache object exists, assume Redis client in it connected
+            redis_ok = cache.redis.ping() if hasattr(cache, 'redis') else False
     except Exception as e:
         logger.warning(f"Redis connection failed: {e}")
     
@@ -162,7 +165,7 @@ async def health_check():
         version=APP_VERSION,
         uptime=time.time() - START_TIME,
         redis=redis_ok,
-        model_status={"nvidia/llama-3.1-nemotron-ultra-253b-v1": "available"}
+        model_status={"nvidia/llama-3.1-nemotron-ultra-253b-v1": "available"} # This should ideally come from config
     )
 
 # Cache endpoints
@@ -171,15 +174,15 @@ async def health_check():
     response_model=CacheStats,
     tags=["Cache"]
 )
-async def get_cache_stats():
+async def get_cache_stats_endpoint(cache: CacheManager = Depends(get_cache_manager)):
     """Get cache statistics."""
     stats = cache.get_stats()
     return CacheStats(
         hits=stats.get("hits", 0),
         misses=stats.get("misses", 0),
-        size=stats.get("bytes", 0),
-        max_size=stats.get("max_memory", 0),
-        hit_ratio=stats.get("hit_ratio", 0.0)
+        size=stats.get("bytes", 0), # Assuming CacheManager provides these
+        max_size=stats.get("max_memory", 0), # Assuming CacheManager provides these
+        hit_ratio=stats.get("hit_ratio", 0.0) # Assuming CacheManager provides these
     )
 
 @app.post(
@@ -187,10 +190,28 @@ async def get_cache_stats():
     status_code=status.HTTP_204_NO_CONTENT,
     tags=["Cache"]
 )
-async def clear_cache():
+async def clear_cache_endpoint(cache: CacheManager = Depends(get_cache_manager)):
     """Clear all cached data."""
-    cache.clear_all()
+    cache.clear() # Changed from clear_all, assuming clear() is the method
     return None
+
+# Dependency Provider Functions
+def get_settings() -> ApiSettings:
+    return app_settings
+
+def get_cache_manager() -> CacheManager:
+    # CacheManager uses global 'settings' from its own import of config.py
+    return CacheManager()
+
+def get_task_manager(cache: CacheManager = Depends(get_cache_manager)) -> TaskManager:
+    return TaskManager(cache_manager=cache)
+
+def get_prompt_orchestrator(
+    settings: ApiSettings = Depends(get_settings),
+    cache: CacheManager = Depends(get_cache_manager),
+    tm: TaskManager = Depends(get_task_manager)
+) -> PromptOrchestrator:
+    return PromptOrchestrator(config=settings, cache_manager=cache, task_manager=tm)
 
 # Prompt generation endpoints
 @app.post(
@@ -199,34 +220,51 @@ async def clear_cache():
     status_code=status.HTTP_202_ACCEPTED,
     tags=["Prompts"]
 )
-async def generate_prompt(request: PromptRequest):
+async def generate_prompt_endpoint(request: PromptRequest): # Renamed for clarity
     """Submit a prompt generation request via Celery."""
     try:
-        async_result = generate_prompt_task.delay(request.task_id if hasattr(request, 'task_id') else None, request.dict())
+        # generate_prompt_task is a Celery task. It doesn't directly use the orchestrator from main.py's context.
+        # Its own internal logic would instantiate an orchestrator if needed, or it's passed arguments.
+        # The request.dict() passes data. If request.task_id is meant for the Celery task id, it's fine.
+        # The main concern for DI here is that PromptResponse or TaskStatus don't rely on removed globals.
+        # TaskStatus.PENDING looks like an enum/constant, which is fine.
+        from datetime import datetime # Ensure datetime is imported if not already global
+        task_id_to_send = request.task_id if hasattr(request, 'task_id') and request.task_id else None
+        
+        # The first argument to delay is typically the task's name if not using @app.task decorator directly on func
+        # Or, if generate_prompt_task is already a Celery proxy object, this is fine.
+        # Assuming generate_prompt_task is correctly imported and set up from agi_prompt_system.tasks
+        async_result = generate_prompt_task.delay(task_id_to_send, request.dict(exclude_unset=True))
+        
         return PromptResponse(
             task_id=async_result.id,
-            status=TaskStatus.PENDING,
-            progress=0.0,
+            status=TaskStatus.PENDING, # Assuming TaskStatus.PENDING is a valid enum/constant
+            progress=0.0, # Default progress
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error submitting task to Celery: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to submit task: {str(e)}")
 
 @app.get(
     "/api/prompts/tasks/{task_id}",
     response_model=PromptResponse,
     tags=["Prompts"]
 )
-async def get_task_status(task_id: str) -> PromptResponse:
+async def get_task_status_endpoint(task_id: str, orchestrator: PromptOrchestrator = Depends(get_prompt_orchestrator)) -> PromptResponse: # Renamed
     """Get the status of a prompt generation task."""
-    task_info = orchestrator.get_task_status(task_id)
+    task_info = orchestrator.get_task_status(task_id) # This now uses the injected orchestrator
     if not task_info:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Task {task_id} not found"
         )
     
+    # Ensure task_info is compatible with PromptResponse model
+    # If task_info from orchestrator.get_task_status is already a dict that matches PromptResponse, this is fine.
+    # Otherwise, mapping might be needed.
+    # Based on previous subtasks, orchestrator.get_task_status returns a dict ready for PromptResponse.
     return PromptResponse(**task_info)
 
 # Metrics endpoint

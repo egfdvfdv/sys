@@ -1,7 +1,7 @@
 """Base class for all agents in the AGI Prompt System."""
 from typing import Dict, Any, Optional, List
 import json
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from ..config import Config
 
@@ -11,7 +11,7 @@ class BaseAgent:
     def __init__(self, config: Config):
         """Initialize the agent with configuration."""
         self.config = config
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             base_url=self.config.API_BASE_URL,
             api_key=self.config.API_KEY
         )
@@ -29,7 +29,7 @@ class BaseAgent:
                 "temperature": temperature
             }, indent=2))
             
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.config.MODEL,
                 messages=messages,
                 temperature=temperature,

@@ -13,19 +13,20 @@ from .utils import cached, TaskManager, async_task, CacheManager
 class PromptOrchestrator:
     """Orchestrates the interaction between PromptArchitect and PromptEvaluator."""
     
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Config, cache_manager: CacheManager, task_manager: TaskManager):
         """
-        Initialize the orchestrator with configuration.
+        Initialize the orchestrator with configuration, cache manager, and task manager.
         
         Args:
-            config: Optional configuration object
+            config: Configuration object
+            cache_manager: CacheManager instance
+            task_manager: TaskManager instance
         """
-        self.config = config or Config()
-        self.architect = PromptArchitect(self.config)
-        self.evaluator = PromptEvaluator(self.config)
-        self.task_manager = TaskManager()
-        self.cache = CacheManager()
-        self.results: List[Dict[str, Any]] = []
+        self.config = config
+        self.architect = PromptArchitect(self.config) # Assumes PromptArchitect takes config
+        self.evaluator = PromptEvaluator(self.config) # Assumes PromptEvaluator takes config
+        self.task_manager = task_manager
+        self.cache = cache_manager
     
     @cached(ttl=86400)  # Cache for 24 hours
     async def _evaluate_prompt_cached(self, prompt: str) -> Dict[str, Any]:
@@ -44,7 +45,8 @@ class PromptOrchestrator:
         self, 
         requirements: str,
         max_iterations: Optional[int] = None,
-        task_id: Optional[str] = None
+        task_id: Optional[str] = None,
+        progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None
     ) -> Dict[str, Any]:
         """
         Generate and refine a system prompt based on requirements.
@@ -53,6 +55,7 @@ class PromptOrchestrator:
             requirements: Requirements for the system prompt
             max_iterations: Maximum number of refinement iterations
             task_id: Optional task ID for tracking progress
+            progress_callback: Optional callback function for progress updates
             
         Returns:
             Dict containing the final prompt, score, and iteration history
@@ -69,17 +72,21 @@ class PromptOrchestrator:
         
         current_prompt = await self.architect.generate_initial_prompt(requirements)
         iteration = 0
+        current_run_results: List[Dict[str, Any]] = []
         
         while max_iterations is None or iteration < max_iterations:
             iteration += 1
             
             # Update task progress
-            progress = {
-                "iteration": iteration,
-                "status": "evaluating",
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            self.cache.set(f"task:{task_id}", progress, ttl=3600)
+            if progress_callback:
+                progress_data = {
+                    "task_id": task_id,
+                    "iteration": iteration,
+                    "status": "EVALUATING",
+                    "current_score": None,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                progress_callback(progress_data)
             
             print(f"\n{'='*50}")
             print(f"Iteration {iteration}")
@@ -98,15 +105,19 @@ class PromptOrchestrator:
                 "feedback": evaluation,
                 "timestamp": datetime.utcnow().isoformat()
             }
-            self.results.append(result)
+            current_run_results.append(result)
             
             # Update task progress with evaluation result
-            progress.update({
-                "status": "evaluated",
-                "score": score,
-                "result": result
-            })
-            self.cache.set(f"task:{task_id}", progress, ttl=3600)
+            if progress_callback:
+                progress_data = {
+                    "task_id": task_id,
+                    "iteration": iteration,
+                    "status": "EVALUATED",
+                    "current_score": score,
+                    "details": result, # The 'result' dict contains prompt, feedback etc.
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                progress_callback(progress_data)
             
             print(f"Current score: {score}/1000")
             
@@ -132,7 +143,7 @@ class PromptOrchestrator:
             "task_id": task_id,
             "final_prompt": current_prompt,
             "final_score": score,
-            "iterations": self.results,
+            "iterations": current_run_results,
             "requirements": requirements,
             "completed_at": datetime.utcnow().isoformat()
         }
@@ -169,15 +180,16 @@ class PromptOrchestrator:
         """
         return self.task_manager.get_task_status(task_id)
     
-    def save_results(self, filepath: str) -> None:
+    def save_results(self, filepath: str, generation_output: Dict[str, Any]) -> None:
         """
         Save the prompt generation results to a JSON file.
         
         Args:
             filepath: Path to save the results file
+            generation_output: The output dictionary from generate_prompt
         """
         result_data = {
-            "results": self.results,
+            "results": generation_output["iterations"],
             "config": {
                 "model": self.config.MODEL,
                 "min_acceptable_score": self.config.MIN_ACCEPTABLE_SCORE,
@@ -237,7 +249,7 @@ async def main():
         result = await orchestrator.generate_prompt(requirements)
         
         # Save the results
-        orchestrator.save_results("prompt_generation_results.json")
+        orchestrator.save_results("prompt_generation_results.json", result)
         
         # Print the final prompt and score
         print("\n" + "="*50)

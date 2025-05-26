@@ -35,9 +35,9 @@ def async_task(*args, **kwargs) -> Callable:
 class TaskManager:
     """Manager for task queue operations."""
     
-    def __init__(self, cache_manager: Optional[CacheManager] = None):
-        """Initialize with optional cache manager."""
-        self.cache = cache_manager or CacheManager()
+    def __init__(self, cache_manager: CacheManager):
+        """Initialize with cache manager."""
+        self.cache = cache_manager
     
     def get_task_status(self, task_id: str) -> Dict[str, Any]:
         """
@@ -49,11 +49,6 @@ class TaskManager:
         Returns:
             Dict containing task status and result if available
         """
-        # Try to get from cache first
-        cached_result = self.cache.get(f"task:{task_id}")
-        if cached_result:
-            return cached_result
-            
         # Get from Celery
         result = AsyncResult(task_id)
         
@@ -64,18 +59,17 @@ class TaskManager:
             'ready': result.ready(),
             'successful': result.successful(),
             'failed': result.failed(),
+            'info': result.info  # Custom metadata from update_state
         }
         
         if result.ready():
             if result.successful():
                 response['result'] = result.result
-            else:
-                response['error'] = str(result.result)
+            elif result.failed(): # Check if failed before accessing result as error
+                response['error'] = str(result.result) # result.result contains the exception
                 response['traceback'] = result.traceback
-        
-        # Cache the result for 5 minutes
-        if result.ready():
-            self.cache.set(f"task:{task_id}", response, ttl=300)
+            # If not successful and not failed, it might be a custom state or revoked
+            # result.info would be the primary source for progress in such cases
         
         return response
     

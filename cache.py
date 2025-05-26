@@ -82,10 +82,10 @@ class CacheManager:
             bytes: The serialized value.
         """
         try:
-            return pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL)
-        except (TypeError, pickle.PicklingError) as e:
-            logger.error(f"Failed to serialize value: {e}")
-            raise ValueError(f"Could not serialize value: {e}")
+            return json.dumps(value).encode('utf-8')
+        except TypeError as e:
+            logger.error(f"Failed to serialize value to JSON: {e}")
+            raise ValueError(f"Could not serialize value to JSON: {e}")
     
     def _deserialize(self, value: bytes) -> Any:
         """Deserialize a value from Redis.
@@ -99,9 +99,9 @@ class CacheManager:
         if value is None:
             return None
         try:
-            return pickle.loads(value)
-        except (pickle.UnpicklingError, TypeError) as e:
-            logger.error(f"Failed to deserialize value: {e}")
+            return json.loads(value.decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            logger.error(f"Failed to deserialize JSON value: {e}")
             return None
     
     def get(self, key: str, default: Any = None) -> Any:
